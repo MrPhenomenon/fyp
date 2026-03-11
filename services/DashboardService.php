@@ -1,0 +1,283 @@
+<?php
+
+namespace app\services;
+
+use app\models\Schedule;
+use app\models\Attendance;
+use yii\db\Query;
+
+class DashboardService
+{
+
+    public static function getTeacherDashboard($teacherId)
+    {
+        return [
+            'todaySchedule' => self::getTodaySchedule($teacherId),
+            'nextClass' => self::getNextClass($teacherId),
+            'attendanceSummary' => self::getAttendanceSummary($teacherId),
+            'last30DaysAttendance' => self::getLast30DaysAttendance($teacherId),
+            'roomsThisWeek' => self::getTeacherRooms($teacherId),
+        ];
+    }
+
+
+    public static function getClerkDashboard($block_id = null, $floor_id = null)
+    {
+        if(!$block_id || !$floor_id) return [];
+        return [
+            'liveClasses' => self::getLiveClasses($block_id, $floor_id),
+            'attendanceToday' => self::getAttendanceTodayStats($block_id, $floor_id),
+            'missingAttendance' => self::getMissingAttendance($block_id, $floor_id),
+            'roomUsage' => self::getRoomUsageToday($block_id, $floor_id),
+        ];
+    }
+
+
+    private static function getTodaySchedule($teacherId)
+    {
+        $today = date('l');
+
+        return Schedule::find()
+            ->alias('s')
+            ->joinWith(['room r'])
+            ->where([
+                's.teacher_id' => $teacherId,
+                's.day_of_week' => $today
+            ])
+            ->orderBy(['s.start_time' => SORT_ASC])
+            ->all();
+    }
+
+
+    private static function getNextClass($teacherId)
+    {
+        $today = date('l');
+        $now = date('H:i:s');
+
+        return Schedule::find()
+            ->where([
+                'teacher_id' => $teacherId,
+                'day_of_week' => $today
+            ])
+            ->andWhere(['>', 'start_time', $now])
+            ->orderBy(['start_time' => SORT_ASC])
+            ->one();
+    }
+
+
+    private static function getAttendanceSummary($teacherId)
+    {
+        $monthStart = date('Y-m-01');
+
+        $query = (new Query())
+            ->from('attendance')
+            ->where(['teacher_id' => $teacherId])
+            ->andWhere(['>=', 'timestamp', $monthStart]);
+
+        $total = $query->count();
+
+        $present = (clone $query)
+            ->andWhere(['status' => 'present'])
+            ->count();
+
+        $absent = (clone $query)
+            ->andWhere(['status' => 'absent'])
+            ->count();
+
+        return [
+            'total' => $total,
+            'present' => $present,
+            'absent' => $absent,
+            'rate' => $total ? round(($present / $total) * 100) : 0
+        ];
+    }
+
+    private static function getLast30DaysAttendance($teacherId)
+    {
+        $thirtyDaysAgo = date('Y-m-d H:i:s', strtotime('-30 days'));
+
+        $query = (new Query())
+            ->from('attendance')
+            ->where(['teacher_id' => $teacherId])
+            ->andWhere(['>=', 'timestamp', $thirtyDaysAgo]);
+
+        $statusCounts = (clone $query)
+            ->select(['status', 'COUNT(*) as count'])
+            ->groupBy('status')
+            ->all();
+
+        $chartData = [
+            'Yes' => 0,
+            'No' => 0,
+            'Students Not Present' => 0
+        ];
+
+        foreach ($statusCounts as $row) {
+            if (isset($chartData[$row['status']])) {
+                $chartData[$row['status']] = $row['count'];
+            }
+        }
+
+        return $chartData;
+    }
+
+
+    private static function getTeacherRooms($teacherId)
+    {
+        return (new Query())
+            ->select(['r.room_number'])
+            ->distinct()
+            ->from('schedule s')
+            ->innerJoin('rooms r', 'r.room_id = s.room_id')
+            ->where(['s.teacher_id' => $teacherId])
+            ->all();
+    }
+
+
+    private static function getLiveClasses($block_id = null, $floor_id = null)
+    {
+        $today = date('l');
+        $now = date('H:i:s');
+
+        $query = (new Query())
+            ->select([
+                's.schedule_id',
+                'r.room_number',
+                'u.name as teacher',
+                's.subject',
+                'a.status'
+            ])
+            ->from('schedule s')
+            ->innerJoin('rooms r', 'r.room_id = s.room_id')
+            ->innerJoin('users u', 'u.user_id = s.teacher_id')
+            ->innerJoin('department_floors df', 'df.id = r.department_floor')
+            ->innerJoin('floors f', 'f.floor_id = df.floor_id')
+            ->leftJoin('attendance a', 'a.schedule_id = s.schedule_id')
+            ->where(['s.day_of_week' => $today])
+            ->andWhere(['<=', 's.start_time', $now])
+            ->andWhere(['>=', 's.end_time', $now]);
+
+        if ($block_id) {
+            $query->andWhere(['f.block_id' => $block_id]);
+        }
+
+        if ($floor_id) {
+            $query->andWhere(['f.floor_id' => $floor_id]);
+        }
+
+        return $query->all();
+    }
+
+
+    private static function getAttendanceTodayStats($block_id = null, $floor_id = null)
+    {
+        $today = date('Y-m-d');
+
+        $totalQuery = (new Query())
+            ->from('schedule s')
+            ->innerJoin('rooms r', 'r.room_id = s.room_id')
+            ->innerJoin('department_floors df', 'df.id = r.department_floor')
+            ->innerJoin('floors f', 'f.floor_id = df.floor_id')
+            ->where(['s.day_of_week' => date('l')]);
+
+        if ($block_id) {
+            $totalQuery->andWhere(['f.block_id' => $block_id]);
+        }
+
+        if ($floor_id) {
+            $totalQuery->andWhere(['f.floor_id' => $floor_id]);
+        }
+
+        $total = $totalQuery->count();
+
+        $markedQuery = (new Query())
+            ->from('attendance a')
+            ->innerJoin('schedule s', 's.schedule_id = a.schedule_id')
+            ->innerJoin('rooms r', 'r.room_id = s.room_id')
+            ->innerJoin('department_floors df', 'df.id = r.department_floor')
+            ->innerJoin('floors f', 'f.floor_id = df.floor_id')
+            ->where(['like', 'a.timestamp', $today]);
+
+        if ($block_id) {
+            $markedQuery->andWhere(['f.block_id' => $block_id]);
+        }
+
+        if ($floor_id) {
+            $markedQuery->andWhere(['f.floor_id' => $floor_id]);
+        }
+
+        $marked = $markedQuery->count();
+
+        return [
+            'total' => $total,
+            'marked' => $marked,
+            'remaining' => $total - $marked
+        ];
+    }
+
+
+    private static function getMissingAttendance($block_id = null, $floor_id = null)
+    {
+        $today = date('l');
+        $now = date('H:i:s');
+
+        $query = (new Query())
+            ->select([
+                's.schedule_id',
+                'r.room_number',
+                'u.name as teacher',
+                's.subject',
+                's.start_time',
+                's.end_time'
+            ])
+            ->from('schedule s')
+            ->innerJoin('rooms r', 'r.room_id = s.room_id')
+            ->innerJoin('users u', 'u.user_id = s.teacher_id')
+            ->innerJoin('department_floors df', 'df.id = r.department_floor')
+            ->innerJoin('floors f', 'f.floor_id = df.floor_id')
+            ->leftJoin('attendance a', 'a.schedule_id = s.schedule_id')
+            ->where(['s.day_of_week' => $today])
+            ->andWhere(['<', 's.end_time', $now])
+            ->andWhere(['a.schedule_id' => null]);
+
+        if ($block_id) {
+            $query->andWhere(['f.block_id' => $block_id]);
+        }
+
+        if ($floor_id) {
+            $query->andWhere(['f.floor_id' => $floor_id]);
+        }
+
+        return $query->all();
+    }
+
+
+    private static function getRoomUsageToday($block_id = null, $floor_id = null)
+    {
+        $today = date('l');
+
+        $query = (new Query())
+            ->select([
+                'r.room_number',
+                'COUNT(*) as classes'
+            ])
+            ->from('schedule s')
+            ->innerJoin('rooms r', 'r.room_id = s.room_id')
+            ->innerJoin('department_floors df', 'df.id = r.department_floor')
+            ->innerJoin('floors f', 'f.floor_id = df.floor_id')
+            ->where(['s.day_of_week' => $today]);
+
+        if ($block_id) {
+            $query->andWhere(['f.block_id' => $block_id]);
+        }
+
+        if ($floor_id) {
+            $query->andWhere(['f.floor_id' => $floor_id]);
+        }
+
+        return $query->groupBy('r.room_number')
+            ->orderBy(['classes' => SORT_DESC])
+            ->all();
+    }
+
+}
