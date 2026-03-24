@@ -123,7 +123,7 @@ $this->title = 'Clerk Dashboard';
                         </div>
                         <div class="card-body">
                             <?php if (empty($data['missingAttendance'])): ?>
-                                <p>All attendances are marked.</p>
+                                <p>No missing attendance at the moment.</p>
                             <?php else: ?>
                                 <div class="table-responsive">
                                     <table class="table table-striped">
