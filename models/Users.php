@@ -268,6 +268,12 @@ class Users extends \yii\db\ActiveRecord implements IdentityInterface
                         'url' => ['report/index'],
                         'roles' => ['teacher', 'clerk'],
                     ],
+                    [
+                        'label' => 'Schedule Management',
+                        'icon' => 'bi bi-calendar-week me-2',
+                        'url' => ['schedule-update/index'],
+                        'roles' => ['clerk'],
+                    ],
                 ],
             ],
             'subscriptions' => [

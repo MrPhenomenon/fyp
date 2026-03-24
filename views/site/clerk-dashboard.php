@@ -73,8 +73,8 @@ $this->title = 'Clerk Dashboard';
                 </div>
             </div>
 
-            <div class="row mt-4">
-                <div class="col-md-6">
+            <div class="row mt-3 gy-4">
+                <div class="col-md-12">
                     <div class="card">
                         <div class="card-header">
                             <h5>Live Classes (Ongoing)</h5>
@@ -154,9 +154,7 @@ $this->title = 'Clerk Dashboard';
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="row mt-4">
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-header">
@@ -175,20 +173,6 @@ $this->title = 'Clerk Dashboard';
                                     <?php endforeach; ?>
                                 </ul>
                             <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5>Mark Attendance</h5>
-                        </div>
-                        <div class="card-body">
-                            <p>Select a block and floor to view and mark attendance for today's classes.</p>
-                            <a href="<?= \yii\helpers\Url::to(['attendance/index']) ?>" class="btn btn-primary">Go to
-                                Attendance
-                                Page</a>
                         </div>
                     </div>
                 </div>
