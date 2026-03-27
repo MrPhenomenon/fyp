@@ -82,7 +82,20 @@ class ScheduleUpdateController extends Controller
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
 
+        $blockId = Yii::$app->session->get('clerk_block_id', '');
+        $floorId = Yii::$app->session->get('clerk_floor_id', '');
+
         $schedules = Schedule::find()
+            ->alias('s')
+            ->joinWith([
+                'room r',
+                'room.departmentFloor df',
+                'room.departmentFloor.floor f'
+            ])
+            ->where([
+                'f.floor_id' => $floorId,
+                'f.block_id' => $blockId,
+            ])
             ->with(['teacher', 'room'])
             ->orderBy(['day_of_week' => SORT_ASC, 'start_time' => SORT_ASC])
             ->all();
