@@ -11,7 +11,7 @@ $this->title = $isQecTeacher ? 'QEC Committee Dashboard' : 'Clerk Dashboard';
 ?>
 
 <div class="container">
-    <h1>Welcome, <?= $user->name ?><?= ucfirst($user->role) ?></h1>
+    <h1>Welcome, <?= ucfirst($user->name) ?> (<?= ucfirst($user->role) ?>)</h1>
 
     <!-- Filter Section -->
     <div class="card mb-4">

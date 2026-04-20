@@ -273,7 +273,7 @@ class Users extends \yii\db\ActiveRecord implements IdentityInterface
 
         $allMenuItems = [
             'statistics' => [
-                'label' => 'Statistics',
+                'label' => '',
                 'items' => [
                     [
                         'label' => 'Admin Dashboard',
@@ -316,12 +316,6 @@ class Users extends \yii\db\ActiveRecord implements IdentityInterface
                         'icon' => 'bi bi-calendar-week me-2',
                         'url' => ['schedule-update/index'],
                         'roles' => ['clerk'],
-                    ],
-                    [
-                        'label' => 'Admin Dashboard',
-                        'icon' => 'bi bi-speedometer2 me-2',
-                        'url' => ['site/admin-dashboard'],
-                        'roles' => ['admin'],
                     ],
                     [
                         'label' => 'QEC Committee',

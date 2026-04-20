@@ -7,7 +7,7 @@ $this->title = 'Teacher Dashboard';
 ?>
 
 <div class="container mt-4">
-    <h1>Welcome, <?= $user->name ?> (Teacher)</h1>
+    <h1>Welcome, <?= ucfirst($user->name) ?> (Teacher)</h1>
 
     <div class="row">
         <div class="col-md-8">

@@ -155,10 +155,8 @@ nav.pc-sidebar.pc-sidebar-hide {
 }
 
 .sidebar-header img {
-  height: 38px;
+  height: 65px;
   width: auto;
-  filter: brightness(0) invert(1);
-  opacity: .9;
 }
 
 .sidebar-content {
@@ -1023,10 +1021,8 @@ body:has(.login-container) {
 }
 
 .login-logo img {
-  height: 60px;
+  height: 100px;
   width: auto;
-  filter: brightness(0) invert(1);
-  opacity: .9;
 }
 
 .login-box h3 {

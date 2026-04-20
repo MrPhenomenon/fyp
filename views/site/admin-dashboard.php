@@ -277,7 +277,7 @@ var chartDonut   = null;
         },
         xaxis: {
             categories: $facLabelsJson,
-            title: { text: 'Count' },
+            title: { text: '' },
             labels: { formatter: function(val) { return Math.floor(val) === val ? val : ''; } }
         },
         yaxis: { labels: { style: { fontSize: '12px' }, maxWidth: 150 } },
