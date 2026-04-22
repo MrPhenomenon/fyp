@@ -28,6 +28,7 @@ $this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii
   <?php $this->head() ?>
   <link rel="icon" href="dassets/images/favicon.svg" type="image/x-icon">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="<?= Yii::getAlias('@web') ?>/css/custom.css" rel="stylesheet">
  
 </head>
 
@@ -41,7 +42,7 @@ $this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii
   <?php include 'header.php'; ?>
   <div class="pc-container">
 
-    <main class="pc-content py-5" role="main">
+    <main class="pc-content" role="main">
       <?= $content ?>
     </main>
   </div>

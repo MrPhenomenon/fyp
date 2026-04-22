@@ -4,6 +4,7 @@ namespace app\models;
 
 use Yii;
 use yii\web\IdentityInterface;
+use app\models\QecCommittee;
 /**
  * This is the model class for table "users".
  *
@@ -206,11 +207,17 @@ class Users extends \yii\db\ActiveRecord implements IdentityInterface
         return $this->role;
     }
 
+    public function isQec()
+    {
+        return QecCommittee::find()->where(['user_id' => $this->user_id])->one();
+    }
+
     public static function findByEmail($username)
     {
         return static::findOne(['email' => $username]);
     }
 
+    
     public function validatePassword($password)
     {
         // return Yii::$app->security->validatePassword($password, $this->password);
@@ -219,15 +226,12 @@ class Users extends \yii\db\ActiveRecord implements IdentityInterface
     public static function getRoleRedirects()
     {
         return [
-            'Super Admin' => ['default/dashboard'],
-            'Content Manager' => ['mcq/manage'],
-            'Support Team' => ['support/mcq-reports'],
+            'admin' => ['default/dashboard'],
+            'teacher' => ['site/teacher-dashboard'],
+            'clerk' => ['site/clerk-dashboard'],
         ];
     }
 
-    /**
-     * Returns the default redirect route for the current user's role.
-     */
     public function getDefaultRedirect()
     {
         $map = self::getRoleRedirects();
@@ -237,6 +241,33 @@ class Users extends \yii\db\ActiveRecord implements IdentityInterface
     public function getSidebarMenuItems()
     {
         $role = $this->role;
+        
+        $isQecMember = false;
+        if ($this->user_id) {
+            $isQecMember = $this->isQec() !== null;
+        }
+
+        $effectiveRoles = [];
+        
+        switch ($role) {
+            case self::ROLE_ADMIN:
+                $effectiveRoles = ['admin'];
+                if ($isQecMember) {
+                    $effectiveRoles[] = 'clerk';
+                }
+                break;
+            case self::ROLE_TEACHER:
+                $effectiveRoles = ['teacher'];
+                if ($isQecMember) {
+                    $effectiveRoles[] = 'clerk';
+                }
+                break;
+            case self::ROLE_CLERK:
+                $effectiveRoles = ['clerk'];
+                break;
+            default:
+                $effectiveRoles = [];
+        }
 
         $menu = [];
 
@@ -245,10 +276,16 @@ class Users extends \yii\db\ActiveRecord implements IdentityInterface
                 'label' => 'Statistics',
                 'items' => [
                     [
-                        'label' => 'Dashboard',
-                        'icon' => 'bi bi-bar-chart-line me-2',
-                        'url' => ['site/index'],
-                        'roles' => ['teacher', 'clerk'],
+                        'label' => 'Teacher Dashboard',
+                        'icon' => 'bi bi-person-badge me-2',
+                        'url' => ['site/teacher-dashboard'],
+                        'roles' => ['teacher'],
+                    ],
+                    [
+                        'label' => 'Clerk Dashboard',
+                        'icon' => 'bi bi-building me-2',
+                        'url' => ['site/clerk-dashboard'],
+                        'roles' => ['clerk'],
                     ],
                     [
                         'label' => 'Attendances',
@@ -274,110 +311,33 @@ class Users extends \yii\db\ActiveRecord implements IdentityInterface
                         'url' => ['schedule-update/index'],
                         'roles' => ['clerk'],
                     ],
-                ],
-            ],
-            'subscriptions' => [
-                'label' => 'Subscriptions',
-                'items' => [
                     [
-                        'label' => 'Subscriptions Management',
-                        'icon' => 'bi bi-calendar3',
-                        'url' => ['subscription/index'],
-                        'roles' => ['Super Admin', 'Finance Manager'],
+                        'label' => 'QEC Committee',
+                        'icon' => 'bi bi-people-fill',
+                        'url' => ['qec-committee/index'],
+                        'roles' => ['admin'],
                     ],
                     [
-                        'label' => 'Coupons Management',
-                        'icon' => 'bi bi-ticket-perforated-fill',
-                        'url' => ['coupons/index'],
-                        'roles' => ['Super Admin', 'Finance Manager'],
+                        'label' => 'User Management',
+                        'icon' => 'bi bi-person-gear me-2',
+                        'url' => ['admin/index'],
+                        'roles' => ['admin'],
                     ],
                 ],
             ],
-            'data_entry' => [
-                'label' => 'Data Entry',
-                'items' => [
-                    [
-                        'label' => 'MCQ Management',
-                        'icon' => 'bi bi-database-fill',
-                        'roles' => ['Super Admin', 'Content Manager'],
-                        'submenu' => [
-                            ['label' => 'Manage MCQs', 'url' => ['mcq/manage'], 'roles' => ['Super Admin', 'Content Manager', 'Support Team']],
-                            ['label' => 'Add MCQs', 'url' => ['mcq/add'], 'roles' => ['Super Admin', 'Content Manager']],
-                            ['label' => 'Import from File', 'url' => ['mcq/import-mcq'], 'roles' => ['Super Admin', 'Content Manager']],
-                        ],
-                    ],
-                    [
-                        'label' => 'Hierarchy Configuration',
-                        'icon' => 'bi bi-diagram-3-fill',
-                        'roles' => ['Super Admin', 'Content Manager'],
-                        'submenu' => [
-                            ['label' => 'Manage Hierarchy', 'url' => ['hierarchy/index'], 'roles' => ['Super Admin', 'Content Manager']],
-                            ['label' => 'Manage Systems & Subjects', 'url' => ['hierarchy/systems-subjects'], 'roles' => ['Super Admin', 'Content Manager']],
-                            ['label' => 'Manage Chapters & Topics', 'url' => ['hierarchy/topics-chapters'], 'roles' => ['Super Admin', 'Content Manager']],
-                        ],
-                    ],
-                ],
-            ],
-            'exam_management' => [
-                'label' => 'Exam Management',
-                'items' => [
-                    [
-                        'label' => 'Exam Configuration',
-                        'icon' => 'bi bi-ui-checks-grid',
-                        'roles' => ['Super Admin', 'Content Manager'],
-                        'submenu' => [
-                            ['label' => 'Exam Types & Specialties', 'url' => ['exam/index'], 'roles' => ['Super Admin', 'Content Manager']],
-                            ['label' => 'Mock Exam Distribution (NF)', 'url' => ['exam/distribution'], 'roles' => ['Super Admin', 'Content Manager']],
-                        ],
-                    ],
-                ],
-            ],
-            'partners' => [
-                'label' => 'Partners',
-                'items' => [
-                    [
-                        'label' => 'External Partners',
-                        'icon' => 'bi bi-building-add',
-                        'roles' => ['Super Admin', 'Finance Manager'],
-                        'submenu' => [
-                            ['label' => 'Add New Partner', 'url' => ['external-partners/create'], 'roles' => ['Super Admin']],
-                            ['label' => 'View All Partners', 'url' => ['external-partners/index'], 'roles' => ['Super Admin']],
-                        ],
-                    ],
-                ],
-            ],
-            'support' => [
-                'label' => 'Support',
-                'items' => [
-                    [
-                        'label' => 'MCQ Reports',
-                        'icon' => 'bi bi-ticket',
-                        'url' => ['support/mcq-reports'],
-                        'roles' => ['Super Admin', 'Support Team', 'Content Manager'],
-                    ],
-                ],
-            ],
-            'team_management' => [
-                'label' => 'Team Management',
-                'items' => [
-                    [
-                        'label' => 'Manage Team',
-                        'icon' => 'bi bi-person-gear',
-                        'url' => ['default/team-management'],
-                        'roles' => ['Super Admin'],
-                    ],
-                ],
-            ],
+            
         ];
-
+        
+        $checkRoles = $effectiveRoles;
+        
         foreach ($allMenuItems as $sectionKey => $section) {
             $filteredSectionItems = [];
             foreach ($section['items'] as $item) {
-                if (in_array($role, $item['roles'])) {
+                if (array_intersect($checkRoles, $item['roles'])) {
                     if (isset($item['submenu'])) {
                         $filteredSubmenu = [];
                         foreach ($item['submenu'] as $subItem) {
-                            if (in_array($role, $subItem['roles'])) {
+                            if (array_intersect($checkRoles, $subItem['roles'])) {
                                 $filteredSubmenu[] = $subItem;
                             }
                         }

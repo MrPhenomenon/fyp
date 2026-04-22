@@ -2,6 +2,7 @@
 
 namespace app\controllers;
 
+use app\models\QecCommittee;
 use app\models\Schedule;
 use app\models\Users;
 use app\models\Rooms;
@@ -32,7 +33,11 @@ class ScheduleUpdateController extends Controller
                         'roles' => ['@'],
                         'matchCallback' => function ($rule, $action) {
                             $identity = Yii::$app->user->identity;
-                            return $identity && isset($identity->role) && strtolower($identity->role) === 'clerk';
+                            if ($identity->isRoleClerk()) return true;
+                            if ($identity->isRoleTeacher()) return true;
+                            $qecMember = QecCommittee::find()->where(['user_id' => $identity->user_id])->one();
+                            if ($qecMember) return true;
+                            return false;
                         }
                     ],
                 ],
@@ -143,8 +148,6 @@ class ScheduleUpdateController extends Controller
             if (!$schedule) {
                 return ['success' => false, 'message' => 'Schedule not found'];
             }
-        } else {
-            $schedule = new Schedule();
         }
 
         $schedule->teacher_id = $teacherId;

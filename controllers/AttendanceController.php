@@ -5,6 +5,7 @@ namespace app\controllers;
 use app\models\Attendance;
 use app\models\Blocks;
 use app\models\Floors;
+use app\models\QecCommittee;
 use app\models\Rooms;
 use app\models\Schedule;
 use app\models\Users;
@@ -28,11 +29,17 @@ class AttendanceController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'except' => ['login', 'error', 'captcha'],
+                'only' => ['index', 'get-floors', 'mark-attendance'],
                 'rules' => [
                     [
                         'allow' => true,
                         'roles' => ['@'],
+                        'matchCallback' => function ($rule, $action) {
+                            $identity = Yii::$app->user->identity;
+                            if ($identity->isRoleClerk()) return true;
+                            $qecMember = $identity->isQec();
+                            return $qecMember !== null;
+                        },
                     ],
                 ],
             ],

@@ -3,6 +3,7 @@
 namespace app\controllers;
 
 use app\models\Attendance;
+use app\models\QecCommittee;
 use app\models\Users;
 use Yii;
 use yii\filters\AccessControl;
@@ -48,7 +49,7 @@ class ReportController extends Controller
         $floorId = null;
         $isClerkWithoutFilter = false;
 
-        if ($user->role === Users::ROLE_CLERK) {
+        if ($user->isRoleClerk() || $user->isQec()) {
             $blockId = Yii::$app->session->get('clerk_block_id');
             $floorId = Yii::$app->session->get('clerk_floor_id');
             

@@ -73,8 +73,8 @@ $this->title = 'Attendance';
                                 Absent
                             </option>
 
-                            <option value="Students Not Present" <?= $status === 'Students Not Present' ? 'selected' : '' ?>>
-                                Students Not Present
+                            <option value="Class Absent" <?= $status === 'Class Absent' ? 'selected' : '' ?>>
+                                Class Absent
                             </option>
 
                         </select>

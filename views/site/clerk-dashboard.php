@@ -5,12 +5,13 @@ use app\models\Attendance;
 use app\models\Blocks;
 
 $user = Yii::$app->user->identity;
+$isQecTeacher = isset($isQecTeacher) && $isQecTeacher;
 
-$this->title = 'Clerk Dashboard';
+$this->title = $isQecTeacher ? 'QEC Committee Dashboard' : 'Clerk Dashboard';
 ?>
 
-<div class="container mt-4">
-    <h1>Welcome, <?= $user->name ?> (Clerk)</h1>
+<div class="container">
+    <h1>Welcome, <?= $user->name ?><?= $isQecTeacher ? ' (QEC Committee)' : ' (Clerk)' ?></h1>
 
     <!-- Filter Section -->
     <div class="card mb-4">
@@ -100,11 +101,17 @@ $this->title = 'Clerk Dashboard';
                                                     <td><?= $class['teacher'] ?></td>
                                                     <td><?= $class['subject'] ?></td>
                                                     <td>
-                                                        <?php if ($class['status']): ?>
-                                                            <span class="badge bg-success">Marked</span>
-                                                        <?php else: ?>
-                                                            <span class="badge bg-warning">Pending</span>
-                                                        <?php endif; ?>
+                                                        <select class="form-select form-select-sm attendance-select" 
+                                                            data-schedule="<?= $class['schedule_id'] ?>"
+                                                            data-room="<?= $class['room_id'] ?>"
+                                                            data-teacher="<?= $class['teacher_id'] ?>"
+                                                            data-subject="<?= $class['subject'] ?>"
+                                                            style="width: 150px;">
+                                                            <option value="">Select</option>
+                                                            <option value="Yes" <?= $class['status'] === 'Yes' ? 'selected' : '' ?>>Present</option>
+                                                            <option value="No" <?= $class['status'] === 'No' ? 'selected' : '' ?>>Absent</option>
+                                                            <option value="Class Absent" <?= $class['status'] === 'Class Absent' ? 'selected' : '' ?>>Class Absent</option>
+                                                        </select>
                                                     </td>
                                                 </tr>
                                             <?php endforeach; ?>
@@ -133,6 +140,7 @@ $this->title = 'Clerk Dashboard';
                                                 <th>Teacher</th>
                                                 <th>Subject</th>
                                                 <th>Time</th>
+                                                <th>Attendance</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -144,6 +152,19 @@ $this->title = 'Clerk Dashboard';
                                                     <td>
                                                         <?= date('g:i A', strtotime($missing['start_time'])) ?> -
                                                         <?= date('g:i A', strtotime($missing['end_time'])) ?>
+                                                    </td>
+                                                    <td>
+                                                        <select class="form-select form-select-sm attendance-select" 
+                                                            data-schedule="<?= $missing['schedule_id'] ?>"
+                                                            data-room="<?= $missing['room_id'] ?>"
+                                                            data-teacher="<?= $missing['teacher_id'] ?>"
+                                                            data-subject="<?= $missing['subject'] ?>"
+                                                            style="width: 150px;">
+                                                            <option value="">Select</option>
+                                                            <option value="Yes" <?= ($missing['status'] ?? '') === 'Yes' ? 'selected' : '' ?>>Present</option>
+                                                            <option value="No" <?= ($missing['status'] ?? '') === 'No' ? 'selected' : '' ?>>Absent</option>
+                                                            <option value="Class Absent" <?= ($missing['status'] ?? '') === 'Class Absent' ? 'selected' : '' ?>>Class Absent</option>
+                                                        </select>
                                                     </td>
                                                 </tr>
                                             <?php endforeach; ?>
@@ -230,6 +251,43 @@ $js = <<<JS
             }
         });
     }
+
+    // Handle attendance marking from dashboard
+    $(document).on("change", ".attendance-select", function(){
+        var select = $(this);
+        var status = select.val();
+
+        if(status === '') return;
+
+        var teacher_id = select.data("teacher");
+        var room_id = select.data("room");
+        var subject = select.data("subject");
+        var scheduleid = select.data("schedule");
+
+        $.ajax({
+            url: '/attendance/mark-attendance',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                schedule_id: scheduleid,
+                teacher_id: teacher_id,
+                room_id: room_id,
+                subject: subject,
+                status: status
+            },
+            success: function(res){
+                console.log(res);
+                if (res.success){
+                    select.removeClass("is-invalid").addClass("is-valid");
+                } else {
+                    select.removeClass("is-valid").addClass("is-invalid");
+                }
+            },
+            error: function(){
+                select.removeClass("is-valid").addClass("is-invalid");
+            }
+        });
+    });
 JS;
 $this->registerJs($js);
 ?>

@@ -28,7 +28,7 @@ class Attendance extends \yii\db\ActiveRecord
      */
     const STATUS_YES = 'Yes';
     const STATUS_NO = 'No';
-    const STATUS_STUDENTS_NOT_PRESENT = 'Students Not Present';
+    const STATUS_CLASS_ABSENT = 'Class Absent';
 
     /**
      * {@inheritdoc}
@@ -114,7 +114,7 @@ class Attendance extends \yii\db\ActiveRecord
         return [
             self::STATUS_YES => 'Yes',
             self::STATUS_NO => 'No',
-            self::STATUS_STUDENTS_NOT_PRESENT => 'Students Not Present',
+            self::STATUS_CLASS_ABSENT => 'Class Absent',
         ];
     }
 

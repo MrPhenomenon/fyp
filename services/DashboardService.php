@@ -138,12 +138,16 @@ class DashboardService
     {
         $today = date('l');
         $now = date('H:i:s');
+        $dateStart = date('Y-m-d 00:00:00');
+        $dateEnd = date('Y-m-d 23:59:59');
 
         $query = (new Query())
             ->select([
                 's.schedule_id',
                 'r.room_number',
+                'r.room_id',
                 'u.name as teacher',
+                'u.user_id as teacher_id',
                 's.subject',
                 'a.status'
             ])
@@ -152,7 +156,7 @@ class DashboardService
             ->innerJoin('users u', 'u.user_id = s.teacher_id')
             ->innerJoin('department_floors df', 'df.id = r.department_floor')
             ->innerJoin('floors f', 'f.floor_id = df.floor_id')
-            ->leftJoin('attendance a', 'a.schedule_id = s.schedule_id')
+            ->leftJoin('attendance a', 'a.schedule_id = s.schedule_id AND a.timestamp >= :dateStart AND a.timestamp <= :dateEnd', [':dateStart' => $dateStart, ':dateEnd' => $dateEnd])
             ->where(['s.day_of_week' => $today])
             ->andWhere(['<=', 's.start_time', $now])
             ->andWhere(['>=', 's.end_time', $now]);
@@ -220,25 +224,30 @@ class DashboardService
     {
         $today = date('l');
         $now = date('H:i:s');
+        $dateStart = date('Y-m-d 00:00:00');
+        $dateEnd = date('Y-m-d 23:59:59');
 
         $query = (new Query())
             ->select([
                 's.schedule_id',
                 'r.room_number',
+                'r.room_id',
                 'u.name as teacher',
+                'u.user_id as teacher_id',
                 's.subject',
                 's.start_time',
-                's.end_time'
+                's.end_time',
+                'a.status'
             ])
             ->from('schedule s')
             ->innerJoin('rooms r', 'r.room_id = s.room_id')
             ->innerJoin('users u', 'u.user_id = s.teacher_id')
             ->innerJoin('department_floors df', 'df.id = r.department_floor')
             ->innerJoin('floors f', 'f.floor_id = df.floor_id')
-            ->leftJoin('attendance a', 'a.schedule_id = s.schedule_id')
+            ->leftJoin('attendance a', 'a.schedule_id = s.schedule_id AND a.timestamp >= :dateStart AND a.timestamp <= :dateEnd', [':dateStart' => $dateStart, ':dateEnd' => $dateEnd])
             ->where(['s.day_of_week' => $today])
             ->andWhere(['<', 's.end_time', $now])
-            ->andWhere(['a.schedule_id' => null]);
+            ->andWhere(['or', ['a.schedule_id' => null], ['a.status' => null]]);
 
         if ($block_id) {
             $query->andWhere(['f.block_id' => $block_id]);

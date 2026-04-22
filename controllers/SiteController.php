@@ -5,6 +5,7 @@ namespace app\controllers;
 use app\services\DashboardService;
 use app\models\Blocks;
 use app\models\Floors;
+use app\models\QecCommittee;
 use Yii;
 use yii\filters\AccessControl;
 use yii\web\Controller;
@@ -58,41 +59,69 @@ class SiteController extends Controller
     }
 
     /**
-     * Displays homepage.
+     * Displays homepage - redirects to appropriate dashboard based on role
      *
-     * @return string
+     * @return Response
      */
     public function actionIndex()
     {
         $user = Yii::$app->user->identity;
-        if ($user->role === Users::ROLE_TEACHER) {
-            $data = DashboardService::getTeacherDashboard(Yii::$app->user->id);
-
-            return $this->render('teacher-dashboard', [
-                'data' => $data
-            ]);
+        if ($user->role === Users::ROLE_ADMIN) {
+            return $this->redirect(['admin/index']);
+        } elseif ($user->role === Users::ROLE_TEACHER) {
+            return $this->redirect(['site/teacher-dashboard']);
         } elseif ($user->role === Users::ROLE_CLERK) {
-            $block_id = Yii::$app->session->get('clerk_block_id');
-            $floor_id = Yii::$app->session->get('clerk_floor_id');
-            
-            $data = DashboardService::getClerkDashboard($block_id, $floor_id);
-            $blocks = Blocks::find()->all();
-            
-            $floors = [];
-            if ($block_id) {
-                $floors = Floors::find()->where(['block_id' => $block_id])->all();
-            }
-
-            return $this->render('clerk-dashboard', [
-                'data' => $data,
-                'blocks' => $blocks,
-                'floors' => $floors,
-                'selectedBlockId' => $block_id,
-                'selectedFloorId' => $floor_id
-            ]);
-        } else {
-            return $this->render('index');
+            return $this->redirect(['site/clerk-dashboard']);
         }
+        
+        return $this->render('index');
+    }
+
+    public function actionTeacherDashboard()
+    {
+        $user = Yii::$app->user->identity;
+        $data = DashboardService::getTeacherDashboard(Yii::$app->user->id);
+
+        return $this->render('teacher-dashboard', [
+            'data' => $data
+        ]);
+    }
+
+    public function actionClerkDashboard()
+    {
+        $user = Yii::$app->user->identity;
+        $block_id = Yii::$app->session->get('clerk_block_id');
+        $floor_id = Yii::$app->session->get('clerk_floor_id');
+        
+        $data = DashboardService::getClerkDashboard($block_id, $floor_id);
+        $blocks = Blocks::find()->all();
+        
+        $floors = [];
+        if ($block_id) {
+            $floors = Floors::find()->where(['block_id' => $block_id])->all();
+        }
+
+        return $this->render('clerk-dashboard', [
+            'data' => $data,
+            'blocks' => $blocks,
+            'floors' => $floors,
+            'selectedBlockId' => $block_id,
+            'selectedFloorId' => $floor_id
+        ]);
+    }
+
+    /**
+     * Set clerk filter (called via AJAX)
+     */
+    public function actionSetClerkFilter()
+    {
+        $block_id = Yii::$app->request->post('block_id');
+        $floor_id = Yii::$app->request->post('floor_id');
+        
+        Yii::$app->session->set('clerk_block_id', $block_id);
+        Yii::$app->session->set('clerk_floor_id', $floor_id);
+        
+        return $this->asJson(['success' => true]);
     }
 
     /**
@@ -109,7 +138,7 @@ class SiteController extends Controller
 
         $model = new LoginForm();
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
+            return $this->redirect(Yii::$app->user->identity->DefaultRedirect);
         }
 
         $model->password = '';
