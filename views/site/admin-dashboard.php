@@ -275,7 +275,11 @@ var chartDonut   = null;
             formatter: function(val) { return val > 0 ? val : ''; },
             style: { fontSize: '11px', colors: ['#fff'] }
         },
-        xaxis: { title: { text: 'Count' } },
+        xaxis: {
+            categories: $facLabelsJson,
+            title: { text: 'Count' },
+            labels: { formatter: function(val) { return Math.floor(val) === val ? val : ''; } }
+        },
         yaxis: { labels: { style: { fontSize: '12px' }, maxWidth: 150 } },
         legend: { position: 'top', horizontalAlign: 'center' },
         tooltip: { shared: true, intersect: false }
