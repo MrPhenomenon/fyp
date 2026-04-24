@@ -220,8 +220,8 @@ class Users extends \yii\db\ActiveRecord implements IdentityInterface
     
     public function validatePassword($password)
     {
-        // return Yii::$app->security->validatePassword($password, $this->password);
-        return $this->password === $password;
+        return Yii::$app->security->validatePassword($password, $this->password);
+        // return $this->password === $password;
     }
     public static function getRoleRedirects()
     {
