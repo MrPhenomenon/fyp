@@ -76,7 +76,9 @@ class ScheduleController extends Controller
             $sheet = $spreadsheet->getActiveSheet();
             $rows = $sheet->toArray();
 
-            unset($rows[0]); // remove header row
+            unset($rows[0]);
+
+            Yii::$app->db->createCommand('DELETE FROM schedule')->execute();
 
             foreach ($rows as $row) {
 

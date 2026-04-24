@@ -123,6 +123,17 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('refreshBtn').addEventListener('click', loadSchedules);
     document.getElementById('scheduleForm').addEventListener('submit', handleSaveSchedule);
 
+    // Convert HH:MM (24hr) to 12hr display string
+    window.to12hr = function(t) {
+        if (!t) return '';
+        var parts = t.split(':');
+        var h = parseInt(parts[0], 10);
+        var m = parts[1] || '00';
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return h + ':' + m + ' ' + ampm;
+    };
+
     document.getElementById('scheduleModal').addEventListener('hidden.bs.modal', function () {
         document.getElementById('scheduleForm').reset();
         document.getElementById('scheduleId').value = '';
@@ -160,8 +171,8 @@ function renderScheduleTable(schedules) {
             <td>${s.teacher_name}</td>
             <td>Room ${s.room_number}</td>
             <td>${s.day_of_week}</td>
-            <td>${s.start_time.substring(0, 5)}</td>
-            <td>${s.end_time.substring(0, 5)}</td>
+            <td>${to12hr(s.start_time)}</td>
+            <td>${to12hr(s.end_time)}</td>
             <td>
                 <button class="btn btn-sm btn-outline-primary no-loader"
                         onclick="editSchedule(${s.schedule_id})">
@@ -183,13 +194,13 @@ function editSchedule(scheduleId) {
     const s = scheduleData[scheduleId];
     if (!s) return;
 
-    document.getElementById('scheduleId').value   = s.schedule_id;
-    document.getElementById('teacherId').value    = s.teacher_id;
-    document.getElementById('roomId').value       = s.room_id;
-    document.getElementById('dayOfWeek').value    = s.day_of_week;
-    // DB stores HH:MM:SS — time inputs only accept HH:MM
-    document.getElementById('startTime').value    = s.start_time.substring(0, 5);
-    document.getElementById('endTime').value      = s.end_time.substring(0, 5);
+    document.getElementById('scheduleId').value = s.schedule_id;
+    document.getElementById('teacherId').value  = s.teacher_id;
+    document.getElementById('roomId').value     = s.room_id;
+    document.getElementById('dayOfWeek').value  = s.day_of_week;
+    // API returns HH:MM (24hr) — exactly what <input type="time"> requires
+    document.getElementById('startTime').value  = s.start_time;
+    document.getElementById('endTime').value    = s.end_time;
     document.getElementById('scheduleModalLabel').textContent = 'Edit Schedule';
 
     scheduleModal.show();

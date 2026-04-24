@@ -106,8 +106,8 @@ class ScheduleUpdateController extends Controller
                 'room_id'      => $schedule->room_id,
                 'room_number'  => $schedule->room->room_number,
                 'day_of_week'  => $schedule->day_of_week,
-                'start_time'   => $schedule->start_time,
-                'end_time'     => $schedule->end_time,
+                'start_time'   => date('H:i', strtotime($schedule->start_time)),
+                'end_time'     => date('H:i', strtotime($schedule->end_time)),
             ];
         }
 
