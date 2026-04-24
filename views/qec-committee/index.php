@@ -18,7 +18,8 @@ $this->params['breadcrumbs'][] = $this->title;
         <?= Html::a('<i class="bi bi-plus-circle"></i> Add Member', ['create'], ['class' => 'btn btn-primary']) ?>
     </div>
 
-    <div class="card-body">
+    <div class="card-body p-0">
+        <div class="table-responsive">
         <?= GridView::widget([
             'dataProvider' => $dataProvider,
             'tableOptions' => ['class' => 'table table-hover'],
@@ -76,5 +77,6 @@ $this->params['breadcrumbs'][] = $this->title;
                 ],
             ],
         ]); ?>
+        </div>
     </div>
 </div>

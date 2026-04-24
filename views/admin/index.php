@@ -15,7 +15,8 @@ $this->params['breadcrumbs'][] = $this->title;
             <h1><?= Html::encode($this->title) ?></h1>
             <?= Html::a('Create User', ['create'], ['class' => 'btn btn-primary']) ?>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
+            <div class="table-responsive">
             <?= GridView::widget([
                 'dataProvider' => $dataProvider,
                 'columns' => [
@@ -63,6 +64,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     ],
                 ],
             ]); ?>
+            </div>
         </div>
     </div>
 </div>

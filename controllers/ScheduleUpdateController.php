@@ -19,9 +19,7 @@ class ScheduleUpdateController extends Controller
         $this->enableCsrfValidation = false;
         return parent::beforeAction($action);
     }
-    /**
-     * {@inheritdoc}
-     */
+
     public function behaviors()
     {
         return [
@@ -34,10 +32,9 @@ class ScheduleUpdateController extends Controller
                         'matchCallback' => function ($rule, $action) {
                             $identity = Yii::$app->user->identity;
                             if ($identity->isRoleClerk()) return true;
+                            if ($identity->isRoleAdmin()) return true;
                             if ($identity->isRoleTeacher()) return true;
-                            $qecMember = QecCommittee::find()->where(['user_id' => $identity->user_id])->one();
-                            if ($qecMember) return true;
-                            return false;
+                            return QecCommittee::find()->where(['user_id' => $identity->user_id])->exists();
                         }
                     ],
                 ],
@@ -54,93 +51,82 @@ class ScheduleUpdateController extends Controller
         ];
     }
 
-    /**
-     * Display schedule management page with all schedules
-     */
     public function actionIndex()
     {
-        $schedules = Schedule::find()
-            ->with(['teacher', 'room'])
-            ->orderBy(['day_of_week' => SORT_ASC, 'start_time' => SORT_ASC])
-            ->all();
-
+        // Join departments so we can show dept name in the teacher dropdown
         $teachers = Users::find()
-            ->where(['role' => 'Teacher'])
+            ->select(['users.user_id', 'users.name', 'departments.department_name'])
+            ->leftJoin('departments', 'departments.department_id = users.department_id')
+            ->where(['users.role' => Users::ROLE_TEACHER])
+            ->orderBy('users.name')
             ->asArray()
             ->all();
 
-        $rooms = Rooms::find()
-            ->asArray()
-            ->all();
+        $rooms = Rooms::find()->asArray()->all();
 
         return $this->render('schedules', [
-            'schedules' => $schedules,
             'teachers' => $teachers,
-            'rooms' => $rooms,
+            'rooms'    => $rooms,
         ]);
     }
 
-    /**
-     * Get schedule data as JSON
-     */
     public function actionGetSchedules()
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
 
-        $blockId = Yii::$app->session->get('clerk_block_id', '');
-        $floorId = Yii::$app->session->get('clerk_floor_id', '');
+        $query = Schedule::find()
+            ->with(['teacher.department', 'room'])
+            ->orderBy(['day_of_week' => SORT_ASC, 'start_time' => SORT_ASC]);
 
-        $schedules = Schedule::find()
-            ->alias('s')
-            ->joinWith([
-                'room r',
-                'room.departmentFloor df',
-                'room.departmentFloor.floor f'
-            ])
-            ->where([
-                'f.floor_id' => $floorId,
-                'f.block_id' => $blockId,
-            ])
-            ->with(['teacher', 'room'])
-            ->orderBy(['day_of_week' => SORT_ASC, 'start_time' => SORT_ASC])
-            ->all();
+        // Only apply block/floor filter when both are set (clerk context)
+        $blockId = Yii::$app->session->get('clerk_block_id');
+        $floorId = Yii::$app->session->get('clerk_floor_id');
+
+        if ($blockId && $floorId) {
+            $query->alias('s')
+                ->joinWith([
+                    'room r',
+                    'room.departmentFloor df',
+                    'room.departmentFloor.floor f',
+                ])
+                ->andWhere(['f.floor_id' => $floorId, 'f.block_id' => $blockId]);
+        }
+
+        $schedules = $query->all();
 
         $data = [];
         foreach ($schedules as $schedule) {
+            $dept        = $schedule->teacher->department;
+            $teacherName = $schedule->teacher->name . ($dept ? ' (' . $dept->department_name . ')' : '');
+
             $data[] = [
-                'schedule_id' => $schedule->schedule_id,
-                'teacher_id' => $schedule->teacher_id,
-                'teacher_name' => $schedule->teacher->name,
-                'room_id' => $schedule->room_id,
-                'room_number' => $schedule->room->room_number,
-                'day_of_week' => $schedule->day_of_week,
-                'start_time' => $schedule->start_time,
-                'end_time' => $schedule->end_time,
+                'schedule_id'  => $schedule->schedule_id,
+                'teacher_id'   => $schedule->teacher_id,
+                'teacher_name' => $teacherName,
+                'room_id'      => $schedule->room_id,
+                'room_number'  => $schedule->room->room_number,
+                'day_of_week'  => $schedule->day_of_week,
+                'start_time'   => $schedule->start_time,
+                'end_time'     => $schedule->end_time,
             ];
         }
 
         return ['success' => true, 'data' => $data];
     }
 
-    /**
-     * Save/Create schedule via AJAX
-     */
     public function actionSave()
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
 
         $scheduleId = Yii::$app->request->post('schedule_id');
-        $teacherId = Yii::$app->request->post('teacher_id');
-        $roomId = Yii::$app->request->post('room_id');
-        $dayOfWeek = Yii::$app->request->post('day_of_week');
-        $startTime = Yii::$app->request->post('start_time');
-        $endTime = Yii::$app->request->post('end_time');
+        $teacherId  = Yii::$app->request->post('teacher_id');
+        $roomId     = Yii::$app->request->post('room_id');
+        $dayOfWeek  = Yii::$app->request->post('day_of_week');
+        $startTime  = Yii::$app->request->post('start_time');
+        $endTime    = Yii::$app->request->post('end_time');
 
         if (!$teacherId || !$roomId || !$dayOfWeek || !$startTime || !$endTime) {
-            return [
-                'success' => false,
-                'message' => 'All fields are required'
-            ];
+            return ['success' => false, 'message' => 'All fields are required'];
         }
 
         if ($scheduleId) {
@@ -148,35 +134,24 @@ class ScheduleUpdateController extends Controller
             if (!$schedule) {
                 return ['success' => false, 'message' => 'Schedule not found'];
             }
+        } else {
+            $schedule = new Schedule();
         }
 
-        $schedule->teacher_id = $teacherId;
-        $schedule->room_id = $roomId;
+        $schedule->teacher_id  = $teacherId;
+        $schedule->room_id     = $roomId;
         $schedule->day_of_week = $dayOfWeek;
-        $schedule->start_time = $startTime;
-        $schedule->end_time = $endTime;
+        $schedule->start_time  = $startTime;
+        $schedule->end_time    = $endTime;
 
         if ($schedule->save()) {
-            return [
-                'success' => true,
-                'message' => 'Schedule saved successfully',
-                'schedule' => [
-                    'schedule_id' => $schedule->schedule_id,
-                    'teacher_id' => $schedule->teacher_id,
-                    'teacher_name' => $schedule->teacher->name,
-                    'room_id' => $schedule->room_id,
-                    'room_number' => $schedule->room->room_number,
-                    'day_of_week' => $schedule->day_of_week,
-                    'start_time' => $schedule->start_time,
-                    'end_time' => $schedule->end_time,
-                ]
-            ];
+            return ['success' => true, 'message' => 'Schedule saved successfully'];
         }
 
         return [
             'success' => false,
             'message' => 'Failed to save schedule',
-            'errors' => $schedule->errors
+            'errors'  => $schedule->errors,
         ];
     }
 }

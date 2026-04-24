@@ -102,14 +102,13 @@ class DashboardService
         $dateEnd   = $date_to   . ' 23:59:59';
         $limit     = self::FACULTY_CHART_LIMIT;
 
-        // Find top-N teachers by absent count first (DB-level limit)
+        // Get top-N teachers who have ANY attendance record, ordered by absent count desc
         $topTeacherIds = (new Query())
-            ->select(['a.teacher_id'])
+            ->select('a.teacher_id')
             ->from('attendance a')
             ->innerJoin('users u', 'u.user_id = a.teacher_id')
             ->andWhere(['>=', 'a.timestamp', $dateStart])
-            ->andWhere(['<=', 'a.timestamp', $dateEnd])
-            ->andWhere(['a.status' => 'No']);
+            ->andWhere(['<=', 'a.timestamp', $dateEnd]);
 
         if ($department_id) {
             $topTeacherIds->andWhere(['u.department_id' => $department_id]);
@@ -120,7 +119,7 @@ class DashboardService
 
         $topTeacherIds = $topTeacherIds
             ->groupBy('a.teacher_id')
-            ->orderBy(['COUNT(*)' => SORT_DESC])
+            ->orderBy(new \yii\db\Expression("SUM(a.status = 'No') DESC"))
             ->limit($limit)
             ->column();
 
