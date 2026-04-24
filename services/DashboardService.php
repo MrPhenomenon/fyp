@@ -25,7 +25,7 @@ class DashboardService
 
     public static function getAdminDashboard($department_id = null, $faculty_id = null, $date_from = null, $date_to = null)
     {
-        $date_from = $date_from ?: date('Y-m-01');
+        $date_from = $date_from ?: date('Y-m-d');
         $date_to   = $date_to   ?: date('Y-m-d');
 
         return [

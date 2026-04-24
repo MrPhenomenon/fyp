@@ -87,7 +87,7 @@ class SiteController extends Controller
 
         $department_id = Yii::$app->request->get('department_id');
         $faculty_id    = Yii::$app->request->get('faculty_id');
-        $date_from     = Yii::$app->request->get('date_from', date('Y-m-01'));
+        $date_from     = Yii::$app->request->get('date_from', date('Y-m-d'));
         $date_to       = Yii::$app->request->get('date_to', date('Y-m-d'));
 
         $data        = DashboardService::getAdminDashboard($department_id, $faculty_id, $date_from, $date_to);
@@ -103,6 +103,23 @@ class SiteController extends Controller
             'dateFrom'             => $date_from,
             'dateTo'               => $date_to,
         ]);
+    }
+
+    public function actionAdminDashboardData()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        $user = Yii::$app->user->identity;
+        if ($user->role !== Users::ROLE_ADMIN) {
+            throw new \yii\web\ForbiddenHttpException('Access denied.');
+        }
+
+        $department_id = Yii::$app->request->get('department_id');
+        $faculty_id    = Yii::$app->request->get('faculty_id');
+        $date_from     = Yii::$app->request->get('date_from', date('Y-m-d'));
+        $date_to       = Yii::$app->request->get('date_to', date('Y-m-d'));
+
+        return DashboardService::getAdminDashboard($department_id, $faculty_id, $date_from, $date_to);
     }
 
     public function actionTeacherDashboard()
