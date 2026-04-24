@@ -21,6 +21,138 @@ class DashboardService
     }
 
 
+    const FACULTY_CHART_LIMIT = 15;
+
+    public static function getAdminDashboard($department_id = null, $faculty_id = null, $date_from = null, $date_to = null)
+    {
+        $date_from = $date_from ?: date('Y-m-01');
+        $date_to   = $date_to   ?: date('Y-m-d');
+
+        return [
+            'kpi'              => self::getAdminKpi($department_id, $faculty_id, $date_from, $date_to),
+            'byDepartment'     => self::getAttendanceByDepartment($department_id, $faculty_id, $date_from, $date_to),
+            'byFaculty'        => self::getAttendanceByFaculty($department_id, $faculty_id, $date_from, $date_to),
+            'facultyChartLimit' => self::FACULTY_CHART_LIMIT,
+        ];
+    }
+
+    private static function getAdminKpi($department_id, $faculty_id, $date_from, $date_to)
+    {
+        $dateStart = $date_from . ' 00:00:00';
+        $dateEnd   = $date_to   . ' 23:59:59';
+
+        $base = (new Query())
+            ->from('attendance a')
+            ->innerJoin('users u', 'u.user_id = a.teacher_id')
+            ->andWhere(['>=', 'a.timestamp', $dateStart])
+            ->andWhere(['<=', 'a.timestamp', $dateEnd]);
+
+        if ($department_id) {
+            $base->andWhere(['u.department_id' => $department_id]);
+        }
+        if ($faculty_id) {
+            $base->andWhere(['a.teacher_id' => $faculty_id]);
+        }
+
+        $total       = (clone $base)->count();
+        $present     = (clone $base)->andWhere(['a.status' => 'Yes'])->count();
+        $absent      = (clone $base)->andWhere(['a.status' => 'No'])->count();
+        $classAbsent = (clone $base)->andWhere(['a.status' => 'Class Absent'])->count();
+
+        return compact('total', 'present', 'absent', 'classAbsent');
+    }
+
+    private static function getAttendanceByDepartment($department_id, $faculty_id, $date_from, $date_to)
+    {
+        $dateStart = $date_from . ' 00:00:00';
+        $dateEnd   = $date_to   . ' 23:59:59';
+
+        $query = (new Query())
+            ->select(['d.department_name', 'a.status', 'COUNT(*) as cnt'])
+            ->from('attendance a')
+            ->innerJoin('users u', 'u.user_id = a.teacher_id')
+            ->innerJoin('departments d', 'd.department_id = u.department_id')
+            ->andWhere(['>=', 'a.timestamp', $dateStart])
+            ->andWhere(['<=', 'a.timestamp', $dateEnd]);
+
+        if ($department_id) {
+            $query->andWhere(['u.department_id' => $department_id]);
+        }
+        if ($faculty_id) {
+            $query->andWhere(['a.teacher_id' => $faculty_id]);
+        }
+
+        $rows = $query->groupBy(['d.department_id', 'a.status'])->all();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $dept = $row['department_name'];
+            if (!isset($result[$dept])) {
+                $result[$dept] = ['Yes' => 0, 'No' => 0, 'Class Absent' => 0];
+            }
+            $result[$dept][$row['status']] = (int)$row['cnt'];
+        }
+
+        return $result;
+    }
+
+    private static function getAttendanceByFaculty($department_id, $faculty_id, $date_from, $date_to)
+    {
+        $dateStart = $date_from . ' 00:00:00';
+        $dateEnd   = $date_to   . ' 23:59:59';
+        $limit     = self::FACULTY_CHART_LIMIT;
+
+        // Find top-N teachers by absent count first (DB-level limit)
+        $topTeacherIds = (new Query())
+            ->select(['a.teacher_id'])
+            ->from('attendance a')
+            ->innerJoin('users u', 'u.user_id = a.teacher_id')
+            ->andWhere(['>=', 'a.timestamp', $dateStart])
+            ->andWhere(['<=', 'a.timestamp', $dateEnd])
+            ->andWhere(['a.status' => 'No']);
+
+        if ($department_id) {
+            $topTeacherIds->andWhere(['u.department_id' => $department_id]);
+        }
+        if ($faculty_id) {
+            $topTeacherIds->andWhere(['a.teacher_id' => $faculty_id]);
+        }
+
+        $topTeacherIds = $topTeacherIds
+            ->groupBy('a.teacher_id')
+            ->orderBy(['COUNT(*)' => SORT_DESC])
+            ->limit($limit)
+            ->column();
+
+        if (empty($topTeacherIds)) {
+            return [];
+        }
+
+        // Now fetch full breakdown (all statuses) for those teachers only
+        $rows = (new Query())
+            ->select(['u.name as faculty_name', 'a.status', 'COUNT(*) as cnt'])
+            ->from('attendance a')
+            ->innerJoin('users u', 'u.user_id = a.teacher_id')
+            ->andWhere(['>=', 'a.timestamp', $dateStart])
+            ->andWhere(['<=', 'a.timestamp', $dateEnd])
+            ->andWhere(['a.teacher_id' => $topTeacherIds])
+            ->groupBy(['a.teacher_id', 'a.status'])
+            ->all();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $name = $row['faculty_name'];
+            if (!isset($result[$name])) {
+                $result[$name] = ['Yes' => 0, 'No' => 0, 'Class Absent' => 0];
+            }
+            $result[$name][$row['status']] = (int)$row['cnt'];
+        }
+
+        uasort($result, fn($a, $b) => $b['No'] - $a['No']);
+
+        return $result;
+    }
+
     public static function getClerkDashboard($block_id = null, $floor_id = null)
     {
         if(!$block_id || !$floor_id) return [];

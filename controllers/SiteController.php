@@ -14,6 +14,7 @@ use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
 use app\models\Users;
+use app\models\Departments;
 
 class SiteController extends Controller
 {
@@ -67,7 +68,7 @@ class SiteController extends Controller
     {
         $user = Yii::$app->user->identity;
         if ($user->role === Users::ROLE_ADMIN) {
-            return $this->redirect(['admin/index']);
+            return $this->redirect(['site/admin-dashboard']);
         } elseif ($user->role === Users::ROLE_TEACHER) {
             return $this->redirect(['site/teacher-dashboard']);
         } elseif ($user->role === Users::ROLE_CLERK) {
@@ -75,6 +76,33 @@ class SiteController extends Controller
         }
         
         return $this->render('index');
+    }
+
+    public function actionAdminDashboard()
+    {
+        $user = Yii::$app->user->identity;
+        if ($user->role !== Users::ROLE_ADMIN) {
+            throw new \yii\web\ForbiddenHttpException('Access denied.');
+        }
+
+        $department_id = Yii::$app->request->get('department_id');
+        $faculty_id    = Yii::$app->request->get('faculty_id');
+        $date_from     = Yii::$app->request->get('date_from', date('Y-m-01'));
+        $date_to       = Yii::$app->request->get('date_to', date('Y-m-d'));
+
+        $data        = DashboardService::getAdminDashboard($department_id, $faculty_id, $date_from, $date_to);
+        $departments = Departments::find()->all();
+        $faculties   = Users::find()->where(['role' => Users::ROLE_TEACHER])->orderBy('name')->all();
+
+        return $this->render('admin-dashboard', [
+            'data'                 => $data,
+            'departments'          => $departments,
+            'faculties'            => $faculties,
+            'selectedDepartmentId' => $department_id,
+            'selectedFacultyId'    => $faculty_id,
+            'dateFrom'             => $date_from,
+            'dateTo'               => $date_to,
+        ]);
     }
 
     public function actionTeacherDashboard()
