@@ -11,7 +11,7 @@ $this->title = $isQecTeacher ? 'QEC Committee Dashboard' : 'Clerk Dashboard';
 ?>
 
 <div class="container">
-    <h1>Welcome, <?= $user->name ?><?= $isQecTeacher ? ' (QEC Committee)' : ' (Clerk)' ?></h1>
+    <h1>Welcome, <?= $user->name ?><?= ucfirst($user->role) ?></h1>
 
     <!-- Filter Section -->
     <div class="card mb-4">
@@ -122,7 +122,7 @@ $this->title = $isQecTeacher ? 'QEC Committee Dashboard' : 'Clerk Dashboard';
                                                         <button type="button"
                                                             class="att-btn att-noclass <?= $class['status'] === 'Class Absent' ? 'selected' : '' ?>"
                                                             data-value="Class Absent">
-                                                            <i class="bi bi-slash-circle"></i><span>No Class</span>
+                                                            <i class="bi bi-slash-circle"></i><span>Class Absent</span>
                                                         </button>
                                                     </div>
                                                 </td>
@@ -186,7 +186,7 @@ $this->title = $isQecTeacher ? 'QEC Committee Dashboard' : 'Clerk Dashboard';
                                                         <button type="button"
                                                             class="att-btn att-noclass <?= ($missing['status'] ?? '') === 'Class Absent' ? 'selected' : '' ?>"
                                                             data-value="Class Absent">
-                                                            <i class="bi bi-slash-circle"></i><span>No Class</span>
+                                                            <i class="bi bi-slash-circle"></i><span>Class Absent</span>
                                                         </button>
                                                     </div>
                                                 </td>
