@@ -16,28 +16,32 @@ $this->title = $isQecTeacher ? 'QEC Committee Dashboard' : 'Clerk Dashboard';
     <!-- Filter Section -->
     <div class="card mb-4">
         <div class="card-body">
-            <div class="d-md-flex gap-3 align-items-end">
-                <div class="mb-3">
-                    <label class="form-label">Select Block</label>
-                    <select class="form-select" name="block_id" id="block_select">
-                        <option value="">Select Block</option>
-                        <?php foreach ($blocks as $block): ?>
-                            <option value="<?= $block->block_id ?>" <?= $selectedBlockId == $block->block_id ? 'selected' : '' ?>>
-                                <?= $block->block_name ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Select Block</label>
+                        <select class="form-select" name="block_id" id="block_select">
+                            <option value="">Select Block</option>
+                            <?php foreach ($blocks as $block): ?>
+                                <option value="<?= $block->block_id ?>" <?= $selectedBlockId == $block->block_id ? 'selected' : '' ?>>
+                                    <?= $block->block_name ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Select Floor</label>
-                    <select class="form-select" name="floor_id" id="floor_select">
-                        <option value="">Select Floor</option>
-                        <?php foreach ($floors as $floor): ?>
-                            <option value="<?= $floor->floor_id ?>" <?= $selectedFloorId == $floor->floor_id ? 'selected' : '' ?>>
-                                Floor <?= $floor->floor_number ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Select Floor</label>
+                        <select class="form-select" name="floor_id" id="floor_select">
+                            <option value="">Select Floor</option>
+                            <?php foreach ($floors as $floor): ?>
+                                <option value="<?= $floor->floor_id ?>" <?= $selectedFloorId == $floor->floor_id ? 'selected' : '' ?>>
+                                    Floor <?= $floor->floor_number ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
