@@ -20,12 +20,12 @@ class AppAsset extends AssetBundle
     public $basePath = '@webroot';
     public $baseUrl = '@web';
     public $css = [
+        'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap',
         'https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap',
         'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css',
         'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css',
-        'css/style.css',
-        'css/style-preset.css',
-        'css/landing.css',
+        'css/custom.css',
+        // 'css/landing.css',
     ];
     public $js = [
         'https://cdn.jsdelivr.net/momentjs/latest/moment.min.js',

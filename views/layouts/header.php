@@ -2,7 +2,7 @@
 use yii\helpers\Html;
 ?>
 
-<header id="mainHeader" class="main-header">
+<header id="mainHeader" class="main-header pc-header">
   <div class="header-left">
     <button id="sidebarToggle" class="toggle-btn">
       <i class="bi bi-list"></i>

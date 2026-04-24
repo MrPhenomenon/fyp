@@ -48,9 +48,6 @@ $this->registerCss('
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="scheduleModalLabel"></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
             </div>
             <form id="scheduleForm">
                 <input type="hidden" id="scheduleId" name="schedule_id" value="">
@@ -58,7 +55,7 @@ $this->registerCss('
                 <div class="modal-body">
                     <div class="form-group">
                         <label>Teacher</label>
-                        <select id="teacherId" name="teacher_id" class="form-control" required>
+                        <select id="teacherId" name="teacher_id" class="form-select" required>
                             <option value="">Select Teacher</option>
                             <?php foreach ($teachers as $teacher): ?>
                                 <option value="<?= $teacher['user_id'] ?>"><?= $teacher['name'] ?></option>
@@ -68,7 +65,7 @@ $this->registerCss('
 
                     <div class="form-group">
                         <label>Room</label>
-                        <select id="roomId" name="room_id" class="form-control" required>
+                        <select id="roomId" name="room_id" class="form-select" required>
                             <option value="">Select Room</option>
                             <?php foreach ($rooms as $room): ?>
                                 <option value="<?= $room['room_id'] ?>">Room <?= $room['room_number'] ?></option>
@@ -78,7 +75,7 @@ $this->registerCss('
 
                     <div class="form-group">
                         <label>Day of Week</label>
-                        <select id="dayOfWeek" name="day_of_week" class="form-control" required>
+                        <select id="dayOfWeek" name="day_of_week" class="form-select" required>
                             <option value="">Select Day</option>
                             <option value="Monday">Monday</option>
                             <option value="Tuesday">Tuesday</option>

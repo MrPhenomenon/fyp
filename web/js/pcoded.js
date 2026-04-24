@@ -197,6 +197,11 @@ function updateSidebarState() {
 }
 updateSidebarState();
 
+function closeSidebarMobile() {
+  $("nav.pc-sidebar").removeClass("pc-sidebar-show");
+  $("header").removeClass("collapsed");
+}
+
 $("#sidebarToggle").on("click", function () {
   const $sidebar = $("nav.pc-sidebar");
   const $header = $("header");
@@ -208,4 +213,9 @@ $("#sidebarToggle").on("click", function () {
     $sidebar.toggleClass("pc-sidebar-hide");
     $header.toggleClass("collapsed");
   }
+});
+
+// Close sidebar on mobile via overlay tap or close button
+$("#sidebarOverlay, #sidebarClose").on("click", function () {
+  closeSidebarMobile();
 });
