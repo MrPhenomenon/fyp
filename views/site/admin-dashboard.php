@@ -155,11 +155,8 @@ $donutClassAbsent = (int) $kpi['classAbsent'];
                     <span class="fw-semibold">Attendance by Department</span>
                 </div>
                 <div class="card-body p-2">
-                    <?php if (empty($byDepartment)): ?>
-                        <div class="text-muted text-center py-5">No data for selected filters.</div>
-                    <?php else: ?>
-                        <div id="chart-by-dept"></div>
-                    <?php endif; ?>
+                    <div id="no-data-dept" class="text-muted text-center py-5<?= empty($byDepartment) ? '' : ' d-none' ?>">No data for selected filters.</div>
+                    <div id="chart-by-dept"<?= empty($byDepartment) ? ' class="d-none"' : '' ?>></div>
                 </div>
             </div>
         </div>
@@ -169,11 +166,8 @@ $donutClassAbsent = (int) $kpi['classAbsent'];
                     <span class="fw-semibold">Overall Distribution</span>
                 </div>
                 <div class="card-body p-2 d-flex align-items-center justify-content-center">
-                    <?php if ($kpi['total'] == 0): ?>
-                        <div class="text-muted text-center py-5">No data for selected filters.</div>
-                    <?php else: ?>
-                        <div id="chart-donut" style="width:100%"></div>
-                    <?php endif; ?>
+                    <div id="no-data-donut" class="text-muted text-center py-5<?= $kpi['total'] == 0 ? '' : ' d-none' ?>">No data for selected filters.</div>
+                    <div id="chart-donut" style="width:100%"<?= $kpi['total'] == 0 ? ' class="d-none"' : '' ?>></div>
                 </div>
             </div>
         </div>
@@ -189,11 +183,8 @@ $donutClassAbsent = (int) $kpi['classAbsent'];
                     <?php endif; ?>
                 </div>
                 <div class="card-body p-2">
-                    <?php if (empty($byFaculty)): ?>
-                        <div class="text-muted text-center py-5">No data for selected filters.</div>
-                    <?php else: ?>
-                        <div id="chart-by-faculty"></div>
-                    <?php endif; ?>
+                    <div id="no-data-faculty" class="text-muted text-center py-5<?= empty($byFaculty) ? '' : ' d-none' ?>">No data for selected filters.</div>
+                    <div id="chart-by-faculty"<?= empty($byFaculty) ? ' class="d-none"' : '' ?>></div>
                 </div>
             </div>
         </div>
@@ -229,16 +220,15 @@ var chartDept    = null;
 var chartFaculty = null;
 var chartDonut   = null;
 
-// Chart 1 – Stacked bar by department
-(function(){
+function createDeptChart(labels, present, absent, classAbs) {
     var el = document.querySelector('#chart-by-dept');
     if (!el) return;
-    var h = Math.max(300, $deptCount * 42);
+    var h = Math.max(300, labels.length * 42);
     chartDept = new ApexCharts(el, {
         series: [
-            { name: 'PRESENT',      data: $deptPresentJson },
-            { name: 'ABSENT',       data: $deptAbsentJson },
-            { name: 'Class Absent', data: $deptClassAbsJson }
+            { name: 'PRESENT',      data: present },
+            { name: 'ABSENT',       data: absent },
+            { name: 'Class Absent', data: classAbs }
         ],
         chart:  { type: 'bar', stacked: true, height: h, toolbar: { show: false } },
         colors: ['#28a745', '#dc3545', '#fd7e14'],
@@ -248,24 +238,23 @@ var chartDonut   = null;
             formatter: function(val) { return val > 0 ? val : ''; },
             style: { fontSize: '11px', colors: ['#fff'] }
         },
-        xaxis: { categories: $deptLabelsJson, labels: { rotate: -30, trim: true } },
+        xaxis: { categories: labels, labels: { rotate: -30, trim: true } },
         yaxis: { labels: { formatter: function(v){ return Math.round(v); } } },
         legend: { position: 'top', horizontalAlign: 'center' },
         tooltip: { shared: true, intersect: false }
     });
     chartDept.render();
-})();
+}
 
-// Chart 2 – Stacked horizontal bar by faculty (all statuses)
-(function(){
+function createFacultyChart(labels, present, absent, classAbs) {
     var el = document.querySelector('#chart-by-faculty');
     if (!el) return;
-    var h = Math.max(280, $facCount * 46);
+    var h = Math.max(280, labels.length * 46);
     chartFaculty = new ApexCharts(el, {
         series: [
-            { name: 'PRESENT',      data: $facPresentJson },
-            { name: 'ABSENT',       data: $facAbsentJson },
-            { name: 'Class Absent', data: $facClassAbsJson }
+            { name: 'PRESENT',      data: present },
+            { name: 'ABSENT',       data: absent },
+            { name: 'Class Absent', data: classAbs }
         ],
         chart:  { type: 'bar', stacked: true, height: h, toolbar: { show: false } },
         colors: ['#28a745', '#dc3545', '#fd7e14'],
@@ -276,7 +265,7 @@ var chartDonut   = null;
             style: { fontSize: '11px', colors: ['#fff'] }
         },
         xaxis: {
-            categories: $facLabelsJson,
+            categories: labels,
             title: { text: '' },
             labels: { formatter: function(val) { return Math.floor(val) === val ? val : ''; } }
         },
@@ -285,14 +274,13 @@ var chartDonut   = null;
         tooltip: { shared: true, intersect: false }
     });
     chartFaculty.render();
-})();
+}
 
-// Chart 3 – Donut overall
-(function(){
+function createDonutChart(present, absent, classAbs) {
     var el = document.querySelector('#chart-donut');
     if (!el) return;
     chartDonut = new ApexCharts(el, {
-        series: [$donutPresentJson, $donutAbsentJson, $donutClassAbsentJson],
+        series: [present, absent, classAbs],
         chart:  { type: 'donut', height: 320 },
         labels: ['PRESENT', 'ABSENT', 'Class Absent'],
         colors: ['#28a745', '#dc3545', '#fd7e14'],
@@ -302,7 +290,18 @@ var chartDonut   = null;
         tooltip: { y: { formatter: function(val){ return val + ' records'; } } }
     });
     chartDonut.render();
-})();
+}
+
+// Initial render (only when data exists on page load)
+if ($deptCount > 0) {
+    createDeptChart($deptLabelsJson, $deptPresentJson, $deptAbsentJson, $deptClassAbsJson);
+}
+if ($facCount > 0) {
+    createFacultyChart($facLabelsJson, $facPresentJson, $facAbsentJson, $facClassAbsJson);
+}
+if ($donutPresent + $donutAbsent + $donutClassAbsent > 0) {
+    createDonutChart($donutPresentJson, $donutAbsentJson, $donutClassAbsentJson);
+}
 
 // Faculty dropdown: client-side filtering by department
 (function(){
@@ -358,34 +357,77 @@ var chartDonut   = null;
                 if ((el = document.getElementById('kpi-class-absent'))) el.textContent = data.kpi.classAbsent;
 
                 // Update department chart
-                if (chartDept) {
-                    var depts = Object.keys(data.byDepartment);
-                    chartDept.updateOptions({
-                        xaxis: { categories: depts },
-                        series: [
-                            { name: 'PRESENT',      data: depts.map(function(d){ return data.byDepartment[d]['Yes']          || 0; }) },
-                            { name: 'ABSENT',       data: depts.map(function(d){ return data.byDepartment[d]['No']           || 0; }) },
-                            { name: 'Class Absent', data: depts.map(function(d){ return data.byDepartment[d]['Class Absent'] || 0; }) }
-                        ]
-                    }, false, true);
+                var depts = Object.keys(data.byDepartment);
+                var noDataDept = document.getElementById('no-data-dept');
+                var elDept = document.getElementById('chart-by-dept');
+                if (depts.length > 0) {
+                    if (noDataDept) noDataDept.classList.add('d-none');
+                    if (elDept) elDept.classList.remove('d-none');
+                    if (chartDept) {
+                        chartDept.updateOptions({
+                            xaxis: { categories: depts },
+                            series: [
+                                { name: 'PRESENT',      data: depts.map(function(d){ return data.byDepartment[d]['Yes']          || 0; }) },
+                                { name: 'ABSENT',       data: depts.map(function(d){ return data.byDepartment[d]['No']           || 0; }) },
+                                { name: 'Class Absent', data: depts.map(function(d){ return data.byDepartment[d]['Class Absent'] || 0; }) }
+                            ]
+                        }, false, true);
+                    } else {
+                        createDeptChart(
+                            depts,
+                            depts.map(function(d){ return data.byDepartment[d]['Yes']          || 0; }),
+                            depts.map(function(d){ return data.byDepartment[d]['No']           || 0; }),
+                            depts.map(function(d){ return data.byDepartment[d]['Class Absent'] || 0; })
+                        );
+                    }
+                } else {
+                    if (noDataDept) noDataDept.classList.remove('d-none');
+                    if (elDept) elDept.classList.add('d-none');
                 }
 
                 // Update faculty chart
-                if (chartFaculty) {
-                    var facs = Object.keys(data.byFaculty);
-                    chartFaculty.updateOptions({
-                        xaxis: { categories: facs },
-                        series: [
-                            { name: 'PRESENT',      data: facs.map(function(f){ return data.byFaculty[f]['Yes']          || 0; }) },
-                            { name: 'ABSENT',       data: facs.map(function(f){ return data.byFaculty[f]['No']           || 0; }) },
-                            { name: 'Class Absent', data: facs.map(function(f){ return data.byFaculty[f]['Class Absent'] || 0; }) }
-                        ]
-                    }, false, true);
+                var facs = Object.keys(data.byFaculty);
+                var noDataFac = document.getElementById('no-data-faculty');
+                var elFac = document.getElementById('chart-by-faculty');
+                if (facs.length > 0) {
+                    if (noDataFac) noDataFac.classList.add('d-none');
+                    if (elFac) elFac.classList.remove('d-none');
+                    if (chartFaculty) {
+                        chartFaculty.updateOptions({
+                            xaxis: { categories: facs },
+                            series: [
+                                { name: 'PRESENT',      data: facs.map(function(f){ return data.byFaculty[f]['Yes']          || 0; }) },
+                                { name: 'ABSENT',       data: facs.map(function(f){ return data.byFaculty[f]['No']           || 0; }) },
+                                { name: 'Class Absent', data: facs.map(function(f){ return data.byFaculty[f]['Class Absent'] || 0; }) }
+                            ]
+                        }, false, true);
+                    } else {
+                        createFacultyChart(
+                            facs,
+                            facs.map(function(f){ return data.byFaculty[f]['Yes']          || 0; }),
+                            facs.map(function(f){ return data.byFaculty[f]['No']           || 0; }),
+                            facs.map(function(f){ return data.byFaculty[f]['Class Absent'] || 0; })
+                        );
+                    }
+                } else {
+                    if (noDataFac) noDataFac.classList.remove('d-none');
+                    if (elFac) elFac.classList.add('d-none');
                 }
 
                 // Update donut chart
-                if (chartDonut) {
-                    chartDonut.updateSeries([data.kpi.present, data.kpi.absent, data.kpi.classAbsent]);
+                var noDataDonut = document.getElementById('no-data-donut');
+                var elDonut = document.getElementById('chart-donut');
+                if (data.kpi.total > 0) {
+                    if (noDataDonut) noDataDonut.classList.add('d-none');
+                    if (elDonut) elDonut.classList.remove('d-none');
+                    if (chartDonut) {
+                        chartDonut.updateSeries([data.kpi.present, data.kpi.absent, data.kpi.classAbsent]);
+                    } else {
+                        createDonutChart(data.kpi.present, data.kpi.absent, data.kpi.classAbsent);
+                    }
+                } else {
+                    if (noDataDonut) noDataDonut.classList.remove('d-none');
+                    if (elDonut) elDonut.classList.add('d-none');
                 }
 
                 // Timestamp
