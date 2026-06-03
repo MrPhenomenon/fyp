@@ -7,11 +7,14 @@ use app\models\Blocks;
 $user = Yii::$app->user->identity;
 $isQecTeacher = isset($isQecTeacher) && $isQecTeacher;
 
-$this->title = $isQecTeacher ? 'QEC Committee Dashboard' : 'Clerk Dashboard';
+$this->title = 'Attendance';
 ?>
 
 <div class="container">
-    <h1>Welcome, <?= ucfirst($user->name) ?> (<?= ucfirst($user->role) ?>)</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Welcome, <?= ucfirst($user->name) ?> (<?= ucfirst($user->role) ?>)</h1>
+        <a href="/attendance" class="btn btn-primary"> <i class="bi bi-eye"></i> View All </a>
+    </div>
 
     <!-- Filter Section -->
     <div class="card mb-4">
@@ -48,7 +51,7 @@ $this->title = $isQecTeacher ? 'QEC Committee Dashboard' : 'Clerk Dashboard';
     </div>
 
     <?php if (empty($data)): ?>
-        <div class="alert alert-warning">Please select Block and Floor to view the dashboard.</div>
+        <div class="alert alert-warning">Please select Block and Floor to view attendances.</div>
     <?php else: ?>
 
         <!-- KPI Cards -->

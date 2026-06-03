@@ -240,7 +240,7 @@ class DashboardService
         $chartData = [
             'Yes' => 0,
             'No' => 0,
-            'Students Not Present' => 0
+            'Class Absent' => 0
         ];
 
         foreach ($statusCounts as $row) {

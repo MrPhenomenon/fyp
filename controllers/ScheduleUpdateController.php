@@ -103,6 +103,7 @@ class ScheduleUpdateController extends Controller
                 'schedule_id'  => $schedule->schedule_id,
                 'teacher_id'   => $schedule->teacher_id,
                 'teacher_name' => $teacherName,
+                'subject'     => $schedule->subject ?? 'N/A',
                 'room_id'      => $schedule->room_id,
                 'room_number'  => $schedule->room->room_number,
                 'day_of_week'  => $schedule->day_of_week,
@@ -120,12 +121,13 @@ class ScheduleUpdateController extends Controller
 
         $scheduleId = Yii::$app->request->post('schedule_id');
         $teacherId  = Yii::$app->request->post('teacher_id');
+        $subject = Yii::$app->request->post('subject');
         $roomId     = Yii::$app->request->post('room_id');
         $dayOfWeek  = Yii::$app->request->post('day_of_week');
         $startTime  = Yii::$app->request->post('start_time');
         $endTime    = Yii::$app->request->post('end_time');
 
-        if (!$teacherId || !$roomId || !$dayOfWeek || !$startTime || !$endTime) {
+        if (!$teacherId || !$roomId || !$dayOfWeek || !$startTime || !$endTime || !$subject) {
             return ['success' => false, 'message' => 'All fields are required'];
         }
 
@@ -143,7 +145,7 @@ class ScheduleUpdateController extends Controller
         $schedule->day_of_week = $dayOfWeek;
         $schedule->start_time  = $startTime;
         $schedule->end_time    = $endTime;
-
+        $schedule->subject     = $subject;
         if ($schedule->save()) {
             return ['success' => true, 'message' => 'Schedule saved successfully'];
         }

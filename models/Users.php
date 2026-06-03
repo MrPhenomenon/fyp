@@ -288,15 +288,9 @@ class Users extends \yii\db\ActiveRecord implements IdentityInterface
                         'roles' => ['teacher'],
                     ],
                     [
-                        'label' => 'Clerk Dashboard',
-                        'icon' => 'bi bi-building me-2',
-                        'url' => ['site/clerk-dashboard'],
-                        'roles' => ['clerk'],
-                    ],
-                    [
-                        'label' => 'Attendances',
+                        'label' => 'Attendance',
                         'icon' => 'bi bi-people me-2',
-                        'url' => ['attendance/index'],
+                        'url' => ['site/clerk-dashboard'],
                         'roles' => ['clerk'],
                     ],
                     [

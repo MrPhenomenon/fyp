@@ -25,6 +25,7 @@ $this->title = 'Schedule Management';
                     <tr>
                         <th>#</th>
                         <th>Teacher</th>
+                        <th>Subject</th>
                         <th>Room</th>
                         <th>Day</th>
                         <th>Start</th>
@@ -76,6 +77,10 @@ $this->title = 'Schedule Management';
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Subject</label>
+                        <input type="text" id="subject" name="subject" class="form-control" required>
+                    </div>
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Day of Week</label>
@@ -103,7 +108,7 @@ $this->title = 'Schedule Management';
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Schedule</button>
+                    <button type="submit" class="btn btn-primary no-loader">Save Schedule</button>
                 </div>
             </form>
         </div>
@@ -169,6 +174,7 @@ function renderScheduleTable(schedules) {
         <tr>
             <td>#${s.schedule_id}</td>
             <td>${s.teacher_name}</td>
+            <td>${s.subject}</td>
             <td>Room ${s.room_number}</td>
             <td>${s.day_of_week}</td>
             <td>${to12hr(s.start_time)}</td>
@@ -196,9 +202,9 @@ function editSchedule(scheduleId) {
 
     document.getElementById('scheduleId').value = s.schedule_id;
     document.getElementById('teacherId').value  = s.teacher_id;
+    document.getElementById('subject').value  = s.subject;
     document.getElementById('roomId').value     = s.room_id;
     document.getElementById('dayOfWeek').value  = s.day_of_week;
-    // API returns HH:MM (24hr) — exactly what <input type="time"> requires
     document.getElementById('startTime').value  = s.start_time;
     document.getElementById('endTime').value    = s.end_time;
     document.getElementById('scheduleModalLabel').textContent = 'Edit Schedule';

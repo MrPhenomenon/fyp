@@ -58,8 +58,8 @@ class AttendanceController extends Controller
         $floorId = Yii::$app->session->get('clerk_floor_id', '');
 
         if (empty($blockId) || empty($floorId)) {
-            Yii::$app->session->setFlash('error', 'Please select a block and floor from the Clerk Dashboard first.');
-            return $this->redirect(['site/index']);
+            Yii::$app->session->setFlash('error', 'Please select a block and floor.');
+            return $this->redirect(['site/clerk-dashboard']);
         }
 
         $today = date('l');
